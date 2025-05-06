@@ -1,0 +1,179 @@
+package com.github.chelovekkrokant;
+
+import java.time.Duration;
+
+public class E {
+
+    static double function (double x) {
+        return Math.acos(x * x - 3) - 2;
+    }
+
+    static double derivative (double x) {
+        return (-2 * x) / Math.sqrt(- Math.pow(x, 4.0) + 6 * x * x - 8);
+    }
+
+    static double phi (double x, double m, double M) {
+        return x - 2 / (m + M) * function(x);
+    }
+
+    static double phiDerivative(double x, double m, double M) {
+        return 1 - 2 / (M + m) * derivative(x);
+    }
+
+    static void getV (double x1, double x2, double eps) {
+        double delta = Math.abs(x1 - x2);
+        System.out.println("Eps = " + eps);
+        System.out.println("Delta = " + delta);
+        System.out.println("V = " + eps / delta);
+    }
+
+    static void getVDelta (double x) {
+        System.out.println("V delta = " + 1 / Math.abs(derivative(x)));
+    }
+
+    static void getSimpleIterationVDelta(double x, double m, double M) {
+        System.out.println("V delta = " + 1 / (1 - Math.abs(phiDerivative(x, m, M))));
+    }
+
+    static boolean checkPhi(double m, double M, double step) {
+        for (double x = 1.5; x <= 1.9; x += step) {
+            if (phiDerivative(x, m, M) >= 1) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static double chordMethod (double left, double right, double eps) {
+        System.out.println("Метод хорд:");
+
+        double leftFuncValue = function(left);
+        double rightFuncValue = function(right);
+        double x, y, prevX = 0;
+        int n = 0;
+        double c = 1.8;
+
+        if (leftFuncValue * rightFuncValue > 0.0) {
+            System.out.println("Интервал задан неверно");
+            return Double.NaN;
+        }
+
+        if (leftFuncValue == 0.0) return left;
+        if (rightFuncValue == 0.0) return right;
+
+        do {
+            n++;
+            x = left - (right - left) * leftFuncValue / (rightFuncValue - leftFuncValue);
+            y = function(x);
+
+            if (y == 0.0) {
+                getV(x, prevX, eps);
+                getVDelta(x);
+                System.out.println("N = " + n);
+                return x;
+            }
+
+            if (y * leftFuncValue < 0.0) {
+                prevX = right;
+                right = x;
+                rightFuncValue = y;
+            } else {
+                prevX = left;
+                left = x;
+                leftFuncValue = y;
+            }
+
+        } while (Math.abs(y) >= eps);
+
+        getV(x, prevX, eps);
+        getVDelta(x);
+        System.out.println("N = " + n);
+
+        return x;
+    }
+
+    static double newtonMethod (double x, double eps) {
+        System.out.println("Метод Ньютона:");
+
+        double y, y1, dx, eps2;
+        double m1 = 3.41;
+        double M2 = 20.3;
+        double prevX = 0;
+        int n = 0;
+        eps2 = Math.sqrt(2 * m1 * eps / M2);
+
+        do {
+            n++;
+            y = function(x);
+
+            if (y == 0.0) {
+                getV(x, prevX, eps);
+                getVDelta(x);
+                System.out.println("N = " + n);
+                return x;
+            }
+
+            y1 = derivative(x);
+            if (y1 == 0.0) return Double.NaN;
+
+            dx = y / y1;
+            prevX = x;
+            x -= dx;
+
+        } while (Math.abs(x - prevX) >= eps2);
+
+        getV(x, prevX, eps);
+        getVDelta(x);
+        System.out.println("N = " + n);
+
+        return x;
+    }
+
+    static double simpleIterationsMethod(double x, double eps) {
+        System.out.println("Метод простых итераций:");
+
+        double M = -3.41;
+        double m = -4.8;
+        double x1 = phi(x, m, M);
+        double x2 = phi(x, m, M);
+        int n = 0;
+        double q = phiDerivative(x1, m, M);
+
+        if (!checkPhi(m, M, 0.001)) {
+            return Double.NaN;
+        }
+
+        do {
+            n++;
+            x = x1;
+            x1 = x2;
+            x2 = phi(x1, m, M);
+            q = phiDerivative(x2, m, M);
+
+        } while (Math.abs(x1 - x2) > (1 - q) / q * eps);
+
+        getV(x2, x1, eps);
+        getSimpleIterationVDelta(x2, m, M);
+        System.out.println("N = " + n);
+
+        return x2;
+    }
+
+    public static void main(String[] args) {
+        double left = 1.5, right = 1.9;
+        double eps = 0.00001;
+
+        double result = chordMethod(left, right, eps);
+        System.out.println("x = " + result);
+        System.out.println("==========");
+
+        double x0 = 1.9;
+        result = newtonMethod(x0, eps);
+        System.out.println("x = " + result);
+        System.out.println("==========");
+
+        result = simpleIterationsMethod(x0, eps);
+        System.out.println("x = " + result);
+        System.out.println("==========");
+    }
+}

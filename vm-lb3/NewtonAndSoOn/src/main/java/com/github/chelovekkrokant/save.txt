@@ -1,0 +1,109 @@
+
+    public static double newtonMethod(DoubleUnaryOperator f, DoubleUnaryOperator fPrime, double x0, double tolerance, int maxIterations) {
+        double x = x0;
+        // Предпоследний корень
+        double preLastRoot = x0;
+
+        for (int i = 0; i < maxIterations; i++) {
+            System.out.printf("Итерация %d\nРассматриваемый корень x = %.5f\nЗначение функции в корне %.5f\n", i, x, f.applyAsDouble(x));
+            double fx = f.applyAsDouble(x);
+            double fpx = fPrime.applyAsDouble(x);
+
+            // Проверка на деление на ноль
+            if (Math.abs(fpx) < tolerance) {
+                throw new ArithmeticException("Производная близка к нулю. Метод Ньютона не может быть применён.");
+            }
+
+            // Следующее приближение
+            double xNext = x - fx / fpx;
+
+            // Проверка на достижение точности
+            if (Math.abs(xNext - x) < tolerance) {
+                System.out.println("\nКорень найден за " + (i + 1) + " итераций.");
+                System.out.printf("\nПроизводная при данном значении x равна %.5f\n", fPrime.applyAsDouble(xNext));
+                System.out.printf("\nРазница между значением функций в двух последних итерациях: %.5f\n", Math.abs(f.applyAsDouble(x) - f.applyAsDouble(preLastRoot)));
+
+                return xNext;
+            }
+            preLastRoot = x;
+            // Обновляем x
+            x = xNext;
+        }
+
+        throw new RuntimeException("Метод Ньютона не сошёлся за " + maxIterations + " итераций.");
+    }
+
+    public static double newtonGarwickMethod(DoubleUnaryOperator f, DoubleUnaryOperator fPrime, double x0, double tolerance, int maxIterations) {
+        double x = x0;
+        // Предпоследний корень
+        double preLastRoot = -5;
+
+        // Коэффициент для нахождения разболтки (должен быть больше 1)
+        double q = 0.5;
+        double interval = 1;
+
+        for (int i = 0; i < maxIterations; i++) {
+            System.out.printf("Итерация %d\nРассматриваемый корень x = %.5f\nЗначение функции в корне %.5f\n", i, x, f.applyAsDouble(x));
+            double fx = f.applyAsDouble(x);
+            double fpx = fPrime.applyAsDouble(x);
+
+            // Проверка на деление на ноль
+            if (Math.abs(fpx) < tolerance) {
+                throw new ArithmeticException("Производная близка к нулю. Метод Ньютона не может быть применён.");
+            }
+
+            // Следующее приближение
+            double xNext = x - fx / fpx;
+
+            q = Math.abs( (xNext - x) / (x - preLastRoot));
+            System.out.printf("Значения корней равны %.5f %.5f %.5f, q = %.5f\n", preLastRoot, x, xNext, q);
+            // Проверка на достижение точности
+            if (q > 1 || Double.isNaN(q)) {
+                System.out.println("\nРазболтка началась на " + (i + 1) + " итерации.");
+                System.out.printf("\nИнтервал неопределенности по Гарвику равен %.16f\n", interval);
+                System.out.printf("\nРазница между значением функций в двух последних итерациях: %.5f\n", Math.abs(f.applyAsDouble(x) - f.applyAsDouble(preLastRoot)));
+
+                return xNext;
+            }
+            interval = Math.abs(preLastRoot - x);
+
+            preLastRoot = x;
+            // Обновляем x
+            x = xNext;
+        }
+
+        throw new RuntimeException("Метод Ньютона не сошёлся за " + maxIterations + " итераций.");
+    }
+
+    public static void saveLaunch(){
+        // Определяем функцию f(x)
+        DoubleUnaryOperator f = x -> Math.log(x * x + 4) / (x + 6) - 9;
+        System.out.println("Метод Ньютона:");
+
+        // Определяем первую производную f'(x)
+        DoubleUnaryOperator fPrime = x -> {
+            double numerator = 2 * x * (x + 6) - (x * x + 4) * Math.log(x * x + 4);
+            double denominator = (x + 6) * (x + 6) * (x * x + 4);
+            return numerator / denominator;
+        };
+
+        // Начальное приближение (выбираем из локализации корня)
+        double x0 = -5.5; // Начальная точка вблизи корня
+
+        // Точность
+        double tolerance = 0.003167;
+
+        // Максимальное количество итераций
+        int maxIterations = 100;
+
+        // Применяем метод Ньютона
+        //double root = newtonMethod(f, fPrime, x0, tolerance, maxIterations);
+
+        // Выводим результат
+        //System.out.printf("Найденный корень: %.5f\n", root);
+        //System.out.printf("Значение функции в корне: %.5f\n", f.applyAsDouble(root));
+
+        double root = newtonGarwickMethod(f, fPrime, x0, tolerance, maxIterations);
+        // Вычисляем интервал неопределённости по правилу Гарвика
+
+    }
